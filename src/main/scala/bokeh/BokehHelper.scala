@@ -10,6 +10,23 @@ import scala.collection.immutable.{IndexedSeq, NumericRange}
   */
 object BokehHelper {
 
+  def setPlotTool(plot: Plot, tool: Tool) = {
+    setPlotTools(plot, tool :: Nil)
+  }
+
+  def setPlotTools(plot: Plot, tools: List[Tool]) = {
+    plot.tools := tools
+  }
+
+  def setDefaultPlotToolsWithHover(plot: Plot, tips: List[(String, String)]) {
+    val hover_tool = new HoverTool().tooltips(Tooltip(tips))
+    setPlotTools(plot, hover_tool :: new PanTool :: new WheelZoomTool :: new CrosshairTool :: Nil)
+  }
+
+  def setDefaultPlotToolsWithHover(plot: Plot, tips: (String, String)*) {
+    setDefaultPlotToolsWithHover(plot, tips.toList)
+  }
+
   def getPlot(xdr: Range, ydr: Range, tools: List[Tool], width: Int = 800, height: Int = 400, plot: Plot = new Plot()) = {
     plot.x_range(xdr).y_range(ydr).tools(tools).width(width).height(height)
   }
@@ -65,6 +82,7 @@ object BokehHelper {
     val circle = new Circle().x(column_x).y(column_y).size(size).fill_color(fill_Color).line_color(line_Color)
     getGlyphRenderer(value, circle)
   }
+
   def setCircleGlyph(plot: Plot, column_x: ColumnDataSource#Column[IndexedSeq, Double], column_y: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource, size: Int = 5, fill_Color: Color = Color.Red, line_Color: Color = Color.Black) = {
     val circleGlyph = getCircleGlyph(column_x, column_y, value, size, fill_Color, line_Color)
     setRenderer(plot, circleGlyph).asInstanceOf[GlyphRenderer]
@@ -95,6 +113,7 @@ object BokehHelper {
     * 且最好每一个List中，x值起始结束均重复，y值起始结束赋固定值（eg. 0）,这样区域会以一条水平线包围（当然水平线可能在上部也可能在下部）
     * 最好将y值小（或者大，取决于水平线的位置）的放在后面，起到的作用是区域叠压的时候小的区域在上部，不会被压盖住看不见
     * 可以将alpha（透明度）设置位0.8
+    *
     * @param xs column(IndexedSeq[List[Double]](List(1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10), List(1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10), List(1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10)))
     * @param ys column(IndexedSeq[List[Double]](List(0, 8, 9, 8.8, 8.6, 8.5, 8, 9, 8.9, 9.8, 8.5, 0), List(0, 3, 5, 6, 7, 5, 4, 3, 3.6, 4.5, 5.5, 0), List(0, 1, 2, 1, 3, 2.5, 2.8, 3, 1.9, 2, 3, 0)))
     * @param value
@@ -126,7 +145,7 @@ object BokehHelper {
 
   def getTextGlyph(column_x: ColumnDataSource#Column[IndexedSeq, Double], column_y: ColumnDataSource#Column[IndexedSeq, Double], t: ColumnDataSource#Column[IndexedSeq, String], value: DataSource, size: Int = 5, fill_Color: Color = Color.Red, line_Color: Color = Color.Black, angle: ColumnDataSource#Column[IndexedSeq, Double] = null) = {
     val text = new Text().x(column_x).y(column_y).text(t)
-    if(angle != null)
+    if (angle != null)
       text.angle(angle)
     getGlyphRenderer(value, text)
   }
@@ -172,23 +191,41 @@ object BokehHelper {
     * 饼状图
     * 此处需要注意的是起始角度和结束角度均是序列值，并且0位置为水平向右，最大值为2π，最小值为-2π，且可以设置direction类改变饼状图的方向，默认为逆时针，即角度增大的方向。
     * 实际测试direction有BUG，不能设置为Direction.AntiClock，即默认值不能再设置
+    *
     * @param innerRadius 内圆半径
     * @param outerRadius 外圆半径
-    * @param startAngle 起始角度
-    * @param endAngle 结束角度
+    * @param startAngle  起始角度
+    * @param endAngle    结束角度
     * @param value
     * @param x
     * @param y
     * @return
     */
   def getAnnularWedgeGlyph(innerRadius: Double, outerRadius: Double, startAngle: ColumnDataSource#Column[IndexedSeq, Double], endAngle: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource, x: Double = 0, y: Double = 0) = {
-    val annularWedge = new AnnularWedge().x(x).y(y).inner_radius(innerRadius).outer_radius(outerRadius).start_angle(startAngle).end_angle(endAngle).fill_color(Color.Blue).line_color(Color.Red)//.direction(Direction.Clock)
+    val annularWedge = new AnnularWedge().x(x).y(y).inner_radius(innerRadius).outer_radius(outerRadius).start_angle(startAngle).end_angle(endAngle).fill_color(Color.Blue).line_color(Color.Red) //.direction(Direction.Clock)
     getGlyphRenderer(value, annularWedge)
   }
 
   def setAnnularWedgeGlyph(plot: Plot, innerRadius: Double, outerRadius: Double, startAngle: ColumnDataSource#Column[IndexedSeq, Double], endAngle: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource, x: Double = 0, y: Double = 0) = {
     val annularWedgeGlyph = getAnnularWedgeGlyph(innerRadius, outerRadius, startAngle, endAngle, value, x, y)
     setRenderer(plot, annularWedgeGlyph).asInstanceOf[GlyphRenderer]
+  }
+
+  //齿轮图
+  def getGearGlyph(x: ColumnDataSource#Column[IndexedSeq, Double], y: ColumnDataSource#Column[IndexedSeq, Double], teeth: ColumnDataSource#Column[IndexedSeq, Int], module: ColumnDataSource#Column[IndexedSeq, Double], shaftSize: ColumnDataSource#Column[IndexedSeq, Double], angle: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource) = {
+    //angle 旋转角度 弧度
+    //internal 控制内齿还是外齿
+    //teeth 齿的数量
+    //shaft_size 内轴因子  内轴半径= module * teeth / 2 * shaft_size 所以shaft_size一般于1，当大于1的时候会出现类似internal为true的效果
+    //module*teeth = 最终的齿轮直接（包含齿）
+    //pressure_angle 控制齿的形状
+    val gear = new Gear().x(x).y(y).angle(angle).module(module).teeth(teeth).pressure_angle(0).shaft_size(shaftSize).internal(false).fill_color(Color.Blue).line_color(Color.Red)
+    getGlyphRenderer(value, gear)
+  }
+
+  def setGearGlyph(plot: Plot, x: ColumnDataSource#Column[IndexedSeq, Double], y: ColumnDataSource#Column[IndexedSeq, Double], teeth: ColumnDataSource#Column[IndexedSeq, Int], module: ColumnDataSource#Column[IndexedSeq, Double], shaftSize: ColumnDataSource#Column[IndexedSeq, Double], angle: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource) = {
+    val gearGlyph = getGearGlyph(x, y, teeth, module, shaftSize, angle, value)
+    setRenderer(plot, gearGlyph).asInstanceOf[GlyphRenderer]
   }
 
   def getDiamondGlyph(column_x: ColumnDataSource#Column[IndexedSeq, Double], column_y: ColumnDataSource#Column[IndexedSeq, Double], value: DataSource, size: Int = 5, fill_Color: Color = Color.Red, line_Color: Color = Color.Black) = {

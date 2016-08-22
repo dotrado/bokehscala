@@ -24,7 +24,7 @@ object Main extends App {
     val xs = column(IndexedSeq[Double](50, 40, 65, 10, 25, 37, 80, 60))
     val ys = column(IndexedSeq[Double](1, 2, 3, 4, 5, 6, 7, 8, 9, 10))
 
-    val lat = column(IndexedSeq(39.91, 36, 31.28))
+    val lat = column(IndexedSeq(39.91, 36.2, 31.28))
     val lon = column(IndexedSeq(116.39, 103.8, 121.46))
 
     val left = column(IndexedSeq[Double](1, 2, 3, 4, 5))
@@ -38,6 +38,12 @@ object Main extends App {
 
     val startAngle = column(IndexedSeq[Double](1.385997, 0.616398, 0.146798, -0.577199, -1.92400))
     val endAngle = column(startAngle.value.map(_ + 0.3))
+
+    val gear_x = column(IndexedSeq[Double](0, 10, 20))
+    val gear_y = column(IndexedSeq[Double](0, 10, 20))
+    val gear_teeth = column(IndexedSeq[Int](5, 6, 7))
+    val gear_module = column(IndexedSeq[Double](3, 2, 1))
+    val gear_shaftSize = column(IndexedSeq[Double](0.3, 0.2, 0.1))
   }
 
   import source._
@@ -47,9 +53,9 @@ object Main extends App {
 
   //  val plot = plotMulitple()
   //  BokehHelper.save2Document(plot)
-  plotMap()
+  //  plotMap()
 
-  //  plot
+  plot
 
   def plot = {
     val plot = BokehHelper.getPlot(xdr, ydr, Pan | WheelZoom | Crosshair, width = 720, height = 720)
@@ -60,8 +66,13 @@ object Main extends App {
     //    plotCsv(plot)
     //    plotSegment(plot)
     //    plotRect(plot)
+    plotGear(plot)
 
     BokehHelper.save2Document(plot)
+  }
+
+  def plotGear(plot: Plot): Unit = {
+    BokehHelper.setGearGlyph(plot, gear_x, gear_y, gear_teeth, gear_module, gear_shaftSize, x0, source)
   }
 
   def plotAnnularWidge(plot: Plot) {
